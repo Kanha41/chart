@@ -12,12 +12,16 @@ export const TradeForm = ({ onTradePlaced }) => {
   const [quantity, setQuantity] = useState('1');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { validationError, validateAndPlaceTrade, clearError } = useTradeValidation();
+  const { validationError, validateAndPlaceTrade, isBidAmountValid, clearError } = useTradeValidation();
 
   const handleBidAmountChange = (e) => {
     const value = e.target.value;
     setBidAmount(value);
-    clearError();
+    if (value !== '' && parseFloat(value) === 0) {
+      isBidAmountValid(parseFloat(value));
+    } else {
+      clearError();
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -56,6 +60,9 @@ export const TradeForm = ({ onTradePlaced }) => {
   };
 
   const placeTrade = async (tradeData) => {
+    if (!tradeData.bidAmount || tradeData.bidAmount <= 0) {
+      throw new Error('Cannot place trade with zero or negative bid amount');
+    }
     // Replace this with your actual API call or trade placement logic
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -76,11 +83,12 @@ export const TradeForm = ({ onTradePlaced }) => {
             id="bidAmount"
             type="number"
             step="0.01"
+            min="0.01"
             value={bidAmount}
             onChange={handleBidAmountChange}
             placeholder="Enter bid amount (cannot be zero)"
             disabled={isSubmitting}
-            className={validationError && bidAmount === '' ? 'input-error' : ''}
+            className={validationError ? 'input-error' : ''}
           />
           {validationError && (
             <span className="error-message">{validationError}</span>
@@ -116,7 +124,7 @@ export const TradeForm = ({ onTradePlaced }) => {
 
         <button
           type="submit"
-          disabled={isSubmitting || !bidAmount}
+          disabled={isSubmitting || !bidAmount || parseFloat(bidAmount) <= 0}
           className="submit-btn"
         >
           {isSubmitting ? 'Placing Trade...' : 'Place Trade'}
